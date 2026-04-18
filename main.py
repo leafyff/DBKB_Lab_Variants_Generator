@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any, Callable, cast, Union
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -19,8 +20,8 @@ Number = Union[int, float]
 
 
 class MainWindow(QMainWindow):
-    _RECENT_GENERATIONS = 15
-    _CACHE_LIMIT_BY_LAB = {1: 15, 2: 15, 3: 15, 4: 15, 5: 15, 6: 15, 7: 15}
+    _RECENT_GENERATIONS = 2
+    _CACHE_LIMIT_BY_LAB = {1: 2, 2: 2, 3: 3, 4: 3, 5: 2, 6: 2, 7: 2}
 
     _TITLE_STYLE = (
         "margin: 0 0 10px 0; "
@@ -41,6 +42,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Lab Variant Picker")
         self.setGeometry(100, 100, 800, 600)
+        self.setWindowIcon(QIcon("app.ico"))
 
         self.cache: dict[int, list[list[int]]] = {lab: [] for lab in range(1, 8)}
 
