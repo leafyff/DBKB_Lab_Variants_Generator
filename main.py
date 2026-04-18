@@ -1,7 +1,7 @@
 import sys
 import random
 from functools import partial
-from typing import Any, Callable, cast
+from typing import Any, Callable, cast, Union
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -15,10 +15,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+Number = Union[int, float]
+
 
 class MainWindow(QMainWindow):
-    _RECENT_GENERATIONS = 2
-    _CACHE_LIMIT_BY_LAB = {1: 2, 2: 2, 3: 3}
+    _RECENT_GENERATIONS = 15
+    _CACHE_LIMIT_BY_LAB = {1: 15, 2: 15, 3: 15, 4: 15, 5: 15, 6: 15, 7: 15}
 
     _TITLE_STYLE = (
         "margin: 0 0 10px 0; "
@@ -138,8 +140,7 @@ class MainWindow(QMainWindow):
                         (27, 45, 1),
                         (46, 67, 2),
                         (68, 88, 1),
-                        (89, 106, 2)
-                        ],
+                        (89, 106, 2)],
                 label_for_index=lambda _: "Question",
             )
         elif lab_num == 3:
@@ -155,6 +156,47 @@ class MainWindow(QMainWindow):
                     (180, 200, 2),
                 ],
                 label_for_index=lambda idx: "Task" if idx >= 5 else "Question",
+            )
+        elif lab_num == 4:
+            html = self._generate_lab(
+                lab_num=4,
+                ranges=[
+                    (1, 29, 1),      # Section 1: basic questions
+                    (30, 53, 1),     # Section 2: broader NF questions
+                    (54, 100, 1),    # Section 3: dependency questions
+                    (101, 157, 2),   # Section 4: NF tasks (question 1 of 2)
+                    (158, 195, 2),   # Section 4: NF tasks (question 2 of 2)
+                    (196, 295, 3),   # Section 5: full normalization task
+                ],
+                label_for_index=lambda idx: "Task" if idx >= 4 else "Question",
+            )
+        elif lab_num == 5:
+            html = self._generate_lab(
+                lab_num=5,
+                ranges=[
+                    (1, 32, 1),
+                    (33, 64, 1),
+                ],
+                label_for_index=lambda _: "Question",
+            )
+        elif lab_num == 6:
+            html = self._generate_lab(
+                lab_num=6,
+                ranges=[
+                    (1, 32, 1),
+                    (33, 46, 1),
+                ],
+                label_for_index=lambda _: "Question",
+            )
+        elif lab_num == 7:
+            html = self._generate_lab(
+                lab_num=7,
+                ranges=[
+                    (1, 28, 1),
+                    (29, 75, 0.5),
+                    (76, 120, 0.5),
+                ],
+                label_for_index=lambda _: "Question",
             )
         else:
             html = self.generate_not_done(lab_num)
@@ -180,20 +222,27 @@ class MainWindow(QMainWindow):
         while len(self.cache[lab_num]) > limit:
             self.cache[lab_num].pop(0)
 
+    @staticmethod
+    def _format_points(points: Number) -> str:
+        if isinstance(points, float) and not points.is_integer():
+            return f"{points:g}"
+        return str(int(points))
+
     def _generate_lab(
         self,
         lab_num: int,
-        ranges: list[tuple[int, int, int]],
+        ranges: list[tuple[int, int, Number]],
         label_for_index: Callable[[int], str],
     ) -> str:
         used_numbers = self.get_recent_numbers(lab_num)
         current_generation: list[int] = []
 
-        parts: list[str] = ["<div style='line-height: 1.6;'>", f"<div style='{self._TITLE_STYLE}'>"
-                                                               f"Lab {lab_num}"
-                                                               "</div>"]
+        parts: list[str] = [
+            "<div style='line-height: 1.6;'>",
+            f"<div style='{self._TITLE_STYLE}'>Lab {lab_num}</div>",
+        ]
 
-        total_points = 0
+        total_points: Number = 0
         for idx, (start, end, points) in enumerate(ranges, 1):
             local_used = used_numbers | set(current_generation)
             num = self.generate_unique_number(start, end, local_used)
@@ -201,20 +250,22 @@ class MainWindow(QMainWindow):
             current_generation.append(num)
             total_points += points
 
+            points_str = self._format_points(points)
             point_word = "Point" if points == 1 else "Points"
             label = label_for_index(idx)
 
             parts.append(
                 f"<div style='{self._ITEM_STYLE}'>"
-                f"{idx}. {label} {num} ({points} {point_word})"
+                f"{idx}. {label} {num} ({points_str} {point_word})"
                 "</div>"
             )
 
         self._update_cache(lab_num, current_generation)
 
+        total_str = self._format_points(total_points)
         parts.append(
             f"<div style='{self._FOOTER_STYLE}'>"
-            f"Maximum score for theory part: {total_points}"
+            f"Maximum score for theory part: {total_str}"
             "</div>"
         )
         parts.append("</div>")
